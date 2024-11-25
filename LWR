@@ -1,0 +1,45 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generate synthetic dataset
+np.random.seed(42)
+X = np.linspace(-3, 3, 100)
+y = np.sin(X) + np.random.normal(0, 0.1, size=X.shape)  # Adding some noise
+
+# Reshape X to 2D for compatibility
+X = X.reshape(-1, 1)
+
+# Locally Weighted Regression function
+def locally_weighted_regression(X_train, y_train, X_query, tau=0.5):
+    predictions = []
+    for x_query in X_query:
+        # Compute weights using a Gaussian kernel
+        weights = np.exp(-np.linalg.norm(X_train - x_query, axis=1)**2 / (2 * tau**2))
+        W = np.diag(weights)
+        
+        # Add intercept to X_train
+        X_train_with_bias = np.hstack([np.ones((X_train.shape[0], 1)), X_train])
+        x_query_with_bias = np.hstack([1, x_query])
+        
+        # Compute theta using weighted least squares
+        theta = np.linalg.inv(X_train_with_bias.T @ W @ X_train_with_bias) @ (X_train_with_bias.T @ W @ y_train)
+        
+        # Predict for the query point
+        prediction = x_query_with_bias @ theta
+        predictions.append(prediction)
+    
+    return np.array(predictions)
+
+# Predict values for the input data
+tau = 0.5  # Bandwidth parameter
+predictions = locally_weighted_regression(X, y, X)
+
+# Plot the results
+plt.figure(figsize=(10, 6))
+plt.scatter(X, y, color='blue', label='Original Data')
+plt.plot(X, predictions, color='red', label='LWLR Fit', linewidth=2)
+plt.title('Locally Weighted Linear Regression (LWLR)')
+plt.xlabel('X')
+plt.ylabel('y')
+plt.legend()
+plt.show()
